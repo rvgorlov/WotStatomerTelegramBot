@@ -5,47 +5,51 @@ import config
 import threading
 import time
 
-bot = telebot.TeleBot(config.telegramToken)
 isPolling = 'no'
 
-@bot.message_handler(commands=['start', 'help'])
-def send_welcome(message):
-    bot.send_message(message.chat.id, "Здарова, танкист! Давай, пиши ник своего товарища...")
-    print("Новый пользователь - " + str(message.chat.id))
-
-@bot.message_handler(func=lambda message: True, content_types=['text'])
-def echo_msg(message):
-    bot.send_message(message.chat.id, "Поиск досье...")
-    dossier = wgAPI.getUserDossier(message.text)
-    if len(dossier) == 0:
-        bot.send_message(message.chat.id, "Досье не найдено. Увы!")
-    else:
-        bot.send_message(message.chat.id, dossier)
-    print("Пользователь - " + str(message.chat.id) + " ищет " + message.text)
-
 def polling():
-    global bot
+    bot = telebot.TeleBot(config.telegramToken)
+
+    @bot.message_handler(commands=['start', 'help'])
+    def send_welcome(message):
+        bot.send_message(message.chat.id, "Здарова, танкист! Давай, пиши ник своего товарища...")
+        print("Новый пользователь - " + str(message.chat.id))
+
+    @bot.message_handler(func=lambda message: True, content_types=['text'])
+    def echo_msg(message):
+        bot.send_message(message.chat.id, "Поиск досье...")
+        dossier = wgAPI.getUserDossier(message.text)
+        if len(dossier) == 0:
+            bot.send_message(message.chat.id, "Досье не найдено. Увы!")
+        else:
+            bot.send_message(message.chat.id, dossier)
+        print("Пользователь - " + str(message.chat.id) + " ищет " + message.text)
+
     global isPolling
     while 1:
         try:
             print('Стартуем бота')
             isPolling = 'ok'
-            bot.polling(none_stop=False, interval=1)
+            bot.polling(none_stop=True, interval=1)
         except:
             print("Exception (polling)")
 
 def internetListener():
+    if len(config.servers) < 2:
+        return
+
     global isPolling
     soc = socket.socket()
     soc.bind(config.servers[config.current])
     soc.listen(len(config.servers))
+    print('Слушаем ' + str(config.servers[config.current]))
 
     try:
         while 1:
             try:
                 conn, addr = soc.accept()
-                conData = str.encode(isPolling)
-                conn.send(conData)
+                data = str.encode(isPolling)
+                conn.send(data)
             except socket.error as e:
                 print(e)
             except:
@@ -55,33 +59,46 @@ def internetListener():
     finally:
         soc.close()
 
+
 def serversChecker():
-    soc = socket.socket()
-    soc.settimeout(5)
+
+    if len(config.servers) < 2:
+        polling()
+
     try:
         while 1:
             serversStatus = []
 
+            print('Проверяем сервера по списку')
             for key in config.servers.keys():
                 if key == config.current:
                     continue
                 else:
                     try:
-                        conn, addr = soc.connect( config.servers[key] )
-                        data = conn.recv()
-                        data = data.decode()
-                        serversStatus.append(data)
+
+                        soc = socket.socket()
+                        soc.settimeout(10)
+                        soc.connect(config.servers[key])
+                        data = soc.recv(1024)
+                        serversStatus.append(data.decode())
+                        soc.close()
                     except socket.error as e:
                         print(e)
+                    except socket.herror as e:
+                        print(e)
+                    except socket.gaierror as e:
+                        print(e)
+                    except socket.timeout as e:
+                        print(e)
                     except:
-                        pass
+                        print('except')
+
             isworkServers = False
 
             for x in serversStatus:
-                print(x)
                 if x == 'ok':
                     print('Найден работающий бот')
-                    workServers = True
+                    isworkServers = True
 
             if not isworkServers:
                 print('Запущенные боты не обнаружены')
@@ -89,18 +106,15 @@ def serversChecker():
             else:
                 print("Обнаружен работающий бот. Ожидаем его смерти.")
 
-            time.sleep(20)
-
+            time.sleep(5)
     except:
         print('except')
 
-#pollingThread = threading.Thread(target=polling)
 listenThread = threading.Thread(target=internetListener)
 reciverThread = threading.Thread(target=serversChecker)
 
 if __name__ == '__main__':
     try:
-        #pollingThread.run()
         listenThread.start()
         reciverThread.start()
 
