@@ -7,9 +7,9 @@ For linux:
 
 1. Install:
 
->sudo apt-get update
->sudo apt-get install python3 python3-pip
->sudo pip3 install pyTelegramBotAPI
+>sudo apt-get update \n
+>sudo apt-get install python3 python3-pip \n
+>sudo pip3 install pyTelegramBotAPI \n
 
 2. Create a file config.py and put it in the folder with the main
 
