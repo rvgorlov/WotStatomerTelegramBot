@@ -15,8 +15,9 @@ For linux:
 
 2. Create a file config.py and put it in the folder with the main
 
-telegramToken = "____________"
-wotAPIToken = "______________"
+>
+telegramToken = ""
+wotAPIToken = ""
 
 DEBUG = True
 
