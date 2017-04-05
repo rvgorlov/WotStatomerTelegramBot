@@ -1,8 +1,11 @@
 import requests
 import config
+from  math import ceil
 
 wgUserListURL = "https://api.worldoftanks.ru/wot/account/list/"
 wgUserInfoURL = "https://api.worldoftanks.ru/wot/account/info/"
+
+wgServerURL = "api.worldoftanks.ru"
 
 def getUserNameAndID(userName):
     try:
@@ -69,10 +72,19 @@ def getUserDossier(userName):
 
     Dossier = "Досье на " + userName + "\n" + "\n"
     Dossier = Dossier + "Wargaming_ID: " + str(userID) + "\n"
-    Dossier = Dossier + "Процент побед: " + str(userWinProc) + "\n"
+    Dossier = Dossier + "Процент побед: " + str( round(userWinProc, 2) ) + "\n"
     Dossier = Dossier + "Победы: " + str(userWins) + "\n"
     Dossier = Dossier + "Поражения: " + str(userLosses) + "\n"
     Dossier = Dossier + "Всего боёв: " + str(userSumBattles) + "\n"
-    Dossier = Dossier + "Максимум сжёг за бой: " + str(userMaxFrags)
+    Dossier = Dossier + "Максимум сжёг за бой: " + str(userMaxFrags) + "\n\n"
+
+    if userSumBattles < 3000:
+        Dossier = Dossier + "Судя по колличеству боев, товарищ ещё совсем зелёный. Не о чём судить ещё. Не показал себя. "
+    elif (ceil(userWinProc) < 50) :
+        Dossier = Dossier + "Судя по статитстике, Ваш товарищ - рак. Ну, ничего, научится... "
+    elif (ceil(userWinProc) >= 50 and ceil(userWinProc) < 54):
+        Dossier = Dossier + "Ему есть куда рости... "
+    else:
+        Dossier = Dossier + "А товарищ Ваш, похоже статист. Два чая ему и кусочек торта. "
 
     return Dossier
